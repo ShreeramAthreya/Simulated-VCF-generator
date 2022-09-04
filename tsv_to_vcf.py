@@ -130,9 +130,17 @@ def tsv_2_vcf(filename,startfile,num_samples):
     for i in tqdm(range(num_samples//2)):
             create_vcf(i,r,sim_before,startText,num_samples,'before')
     
-def reorganize(num_folders,main_folder):
+def reorganize(num_samples,max_files,main_folder):
     os.mkdir(main_folder) # throws error if folder already exists
-    
+    a = int(max_files//14)*14
+    b = int(a*0.4/1.4)
+    c = (a-b)//2
+    d = round(c*2.8)
+    assert d == a
+    if num_samples <= c*2:
+        num_folders = 1
+    else:
+        num_folders = num_samples//(c*2)
     # Create num_folders number of sub-folders in data_for_babyships folder
     for i in range(num_folders):
         folder_name = "set"+str(i+1)+"_simulated_gastric_guardant_panel"
@@ -142,29 +150,29 @@ def reorganize(num_folders,main_folder):
     for i in range(num_folders):
         folder_name = "set"+str(i+1)+"_simulated_gastric_guardant_panel"
 
-        # Copy every 1400 files from no_pik3ca folder to the new folders
-        for file in os.listdir("no_pik3ca"):
+        # Copy every c files from no_pik3ca folder to the new folders
+        for file in os.listdir("all_files/no_pik3ca"):
             if file != ".DS_Store":
-                if i*1400 < int(file.split('.')[0].split('_')[1]) <= (i+1)*1400:
+                if i*c < int(file.split('.')[0].split('_')[1]) <= (i+1)*c:
                     shutil.copy("all_files/no_pik3ca/"+file,main_folder+"/"+folder_name+"/"+file)
         
-        # Copy every 1400 files from both_genes folder to the new folders
-        for file in os.listdir("both_genes"):
+        # Copy every c files from both_genes folder to the new folders
+        for file in os.listdir("all_files/both_genes"):
             if file != ".DS_Store":
-                if i*1400 < int(file.split('.')[0].split('_')[1])-50000 <= (i+1)*1400:
+                if i*c < int(file.split('.')[0].split('_')[1])-num_samples//2 <= (i+1)*c:
                     shutil.copy("all_files/both_genes/"+file,main_folder+"/"+folder_name+"/"+file)
 
         # Repeat the above steps for the 40 percent folder    
-        for file in os.listdir("forty_percent"):
+        for file in os.listdir("all_files/forty_percent"):
             if file != ".DS_Store":
-                if i*1400 < int(file.split('_')[1])-50000 <= (i+1)*1400:
+                if i*c < int(file.split('_')[1])-num_samples//2 <= (i+1)*c:
                     shutil.copy("all_files/forty_percent/"+file,main_folder+"/"+folder_name+"/"+file)
 
 def main():
     #Create vcf files from the given tsv file
     tsv_2_vcf(filename='frequent-mutations_GDC_GastricCancer_SNPs.tsv', startfile='startText.txt', num_samples=100000)
     #Reorganize the files into the correct format
-    reorganize(num_folders = 35, main_folder = "data_for_babyships")
+    reorganize(num_samples=100000, max_files=4000, main_folder = "data_for_babyships")
 
 if __name__ == "__main__":
     main()
