@@ -36,6 +36,7 @@ def filter_tsv(filename):
 
 def generate_variants(relevant,num_samples,category):
     new_seq = np.empty((relevant.shape[0],num_samples)).astype(str)
+    vaf = np.empty((relevant.shape[0],num_samples)).astype(float)
     for i in tqdm(range(relevant.shape[0])):
         rng = np.random.default_rng()
         newp = np.array(["0|0"]*num_samples)
@@ -53,8 +54,13 @@ def generate_variants(relevant,num_samples,category):
             assert mut.shape[0] == len(set(mut))        
             newp[mut] = "1|1"
         new_seq[i,:] = newp
+        # generate random floats in range [0.01,0.8] and round to 5 decimals
+        vaf[i,:] = np.round(rng.uniform(0.01,0.80001,num_samples),5) 
+
+
     simulated_seq = pd.DataFrame(new_seq,columns=range(1,num_samples+1))
-    return simulated_seq
+    simulated_vaf = pd.DataFrame(vaf,columns=range(1,num_samples+1)) # vaf as a dataframe
+    return simulated_seq, simulated_vaf
 
 def alter_all(relevant,sim_all,num_samples):
     sim_before = sim_all.copy()
@@ -66,7 +72,8 @@ def alter_all(relevant,sim_all,num_samples):
             sim_before.iloc[i,:] = newp
     return sim_before
 
-def create_vcf(subject_index,relevant,sim,startText,num_samples,category):    
+
+def create_vcf(subject_index,relevant,sim,vaf,startText,num_samples,category):    
     vcf_data = ""
     # add header to vcf_data
     ll = len(str(num_samples))
@@ -77,15 +84,15 @@ def create_vcf(subject_index,relevant,sim,startText,num_samples,category):
 
     if category == 'before':
         if subject_index%5 == 0:
-            vcf_data = startText + "\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t"+subject_ID+"_10\n"
+            vcf_data = startText + "\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tVAF\tFORMAT\t"+subject_ID+"_10\n"
         else:                
-            vcf_data = startText + "\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t"+subject_ID+"_40\n"
+            vcf_data = startText + "\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tVAF\tFORMAT\t"+subject_ID+"_40\n"
     else:
-        vcf_data = startText + "\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t"+subject_ID+"\n"
+        vcf_data = startText + "\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tVAF\tFORMAT\t"+subject_ID+"\n"
 
     relevant['Combined'] = relevant['Chromosome'] + "\t" + relevant['Position'].astype(str) + \
     "\t" + relevant['Gene ID'] + "\t" + relevant['Reference'] + "\t" + relevant['Alteration'] + \
-    "\t.\t.\t.\tGT\t" + sim[subject_index+1] #sim[str(subject_index+1)]
+    "\t.\t.\t.\t"+vaf[subject_index+1].astype(str)+"\tGT\t" + sim[subject_index+1] #sim[str(subject_index+1)]
 
     vcf_data += "\n".join(relevant['Combined'])
     # save vcf file
@@ -122,20 +129,21 @@ def tsv_2_vcf(filename,startfile,num_samples):
     os.mkdir("all_files/ten_percent") # throws error if folder already exists
     os.mkdir("all_files/forty_percent") # throws error if folder already exists
 
-    sim_none = generate_variants(relevant,num_samples//2,'none')
+    sim_none, vaf_none = generate_variants(relevant,num_samples//2,'none')
     print("Creating files with no PIK3CA mutations")
     for i in tqdm(range(num_samples//2)):
-        create_vcf(i,r,sim_none,startText,num_samples,'none')
+        create_vcf(i,r,sim_none,vaf_none,startText,num_samples,'none')
 
-    sim_all = generate_variants(relevant,num_samples//2,'all')
+    sim_all, vaf_all = generate_variants(relevant,num_samples//2,'all')
     print("Creating files with all PIK3CA mutations")
     for i in tqdm(range(num_samples//2)):
-            create_vcf(i,r,sim_all,startText,num_samples,'all')
+            create_vcf(i,r,sim_all,vaf_all,startText,num_samples,'all')
 
     sim_before = alter_all(relevant,sim_all,num_samples//2)
+    vaf_before = vaf_all.copy()
     print("Creating files where some have PIK3CA mutations and some don't")
     for i in tqdm(range(num_samples//2)):
-            create_vcf(i,r,sim_before,startText,num_samples,'before')
+            create_vcf(i,r,sim_before,vaf_before,startText,num_samples,'before')
     
 def reorganize(num_samples,max_files,main_folder,iterations):
     prefix = iterations*num_samples
@@ -163,7 +171,7 @@ def reorganize(num_samples,max_files,main_folder,iterations):
             if file != ".DS_Store":
                 if i*c < int(file.split('.')[0].split('_')[1]) <= (i+1)*c:
                     # add prefix to file name
-                    new_file = "subject_"+str(prefix+int(file.split('.')[0].split('_')[1])).zfill(3) + ".vcf"
+                    new_file = "subject_"+str(prefix+int(file.split('.')[0].split('_')[1])).zfill(6) + ".vcf"
                     shutil.copy("all_files/no_pik3ca/"+file,main_folder+"/"+folder_name+"/"+new_file)
         
         # Copy every c files from both_genes folder to the new folders
@@ -171,7 +179,7 @@ def reorganize(num_samples,max_files,main_folder,iterations):
             if file != ".DS_Store":
                 if i*c < int(file.split('.')[0].split('_')[1])-num_samples//2 <= (i+1)*c:
                     # add prefix to file name
-                    new_file = "subject_"+str(prefix+int(file.split('.')[0].split('_')[1])).zfill(3) + ".vcf"
+                    new_file = "subject_"+str(prefix+int(file.split('.')[0].split('_')[1])).zfill(6) + ".vcf"
                     shutil.copy("all_files/both_genes/"+file,main_folder+"/"+folder_name+"/"+new_file)
 
         # Repeat the above steps for the 40 percent folder    
@@ -179,7 +187,7 @@ def reorganize(num_samples,max_files,main_folder,iterations):
             if file != ".DS_Store":
                 if i*c < int(file.split('_')[1])-num_samples//2 <= (i+1)*c:
                     # add prefix to file name
-                    new_file = "subject_"+str(prefix+int(file.split('_')[1])).zfill(3) + "_40.vcf"
+                    new_file = "subject_"+str(prefix+int(file.split('_')[1])).zfill(6) + "_40.vcf"
                     shutil.copy("all_files/forty_percent/"+file,main_folder+"/"+folder_name+"/"+new_file)
 
 def main():
@@ -187,7 +195,7 @@ def main():
     num_samples = 100000
     max_files = 140000
     iters = tot_samples//num_samples
-    output = "data_600k_no_vaf"
+    output = "data_600k_vaf"
     for i in tqdm(range(iters)):
         #Create vcf files from the given tsv file
         tsv_2_vcf(filename='frequent-mutations_GDC_GastricCancer_SNPs.tsv', startfile='startText.txt', num_samples=num_samples)
