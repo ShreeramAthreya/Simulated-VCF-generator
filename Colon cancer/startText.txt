@@ -1,0 +1,39 @@
+##fileformat=VCFv4.2
+##fileDate=20220813
+##source=myImplementation
+##reference=file://hg38_trimmed.fa
+##contig=<ID=1,length=248956422,assembly=hg38>
+##contig=<ID=2,length=242193529,assembly=hg38>
+##contig=<ID=3,length=198295559,assembly=hg38>
+##contig=<ID=4,length=190214555,assembly=hg38>
+##contig=<ID=5,length=181538259,assembly=hg38>
+##contig=<ID=6,length=170805979,assembly=hg38>
+##contig=<ID=7,length=159345973,assembly=hg38>
+##contig=<ID=8,length=145138636,assembly=hg38>
+##contig=<ID=9,length=138394717,assembly=hg38>
+##contig=<ID=10,length=133797422,assembly=hg38>
+##contig=<ID=11,length=135086622,assembly=hg38>
+##contig=<ID=12,length=133275309,assembly=hg38>
+##contig=<ID=13,length=114364328,assembly=hg38>
+##contig=<ID=14,length=107043718,assembly=hg38>
+##contig=<ID=15,length=101991189,assembly=hg38>
+##contig=<ID=16,length=90338345,assembly=hg38>
+##contig=<ID=17,length=83257441,assembly=hg38>
+##contig=<ID=18,length=80373285,assembly=hg38>
+##contig=<ID=19,length=58617616,assembly=hg38>
+##contig=<ID=20,length=58617616,assembly=hg38>
+##contig=<ID=21,length=46709983,assembly=hg38>
+##contig=<ID=22,length=50818468,assembly=hg38>
+##contig=<ID=X,length=156040895,assembly=hg38>
+##contig=<ID=Y,length=156040895,assembly=hg38>
+##phasing=partial
+##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">
+##FILTER=<ID=q10,Description="Quality below 10">
+##FILTER=<ID=s50,Description="Less than 50\% \of samples have data">
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral Allele">
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership, build 129">
+##INFO=<ID=H2,Number=0,Type=Flag,Description="HapMap2 membership">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
